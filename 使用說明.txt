@@ -42,6 +42,16 @@
   你的筆記、手繪、考試紀錄都存在 data\exam.db 這一個檔案，
   備份此檔即可保全所有資料。
 
+■ 網頁版（GitHub Pages 免費託管）
+  網址：https://charlie901208.github.io/exam_tester/
+  （首次需在 GitHub repo 的 Settings → Pages 設定 Branch: main、
+   Folder: /docs，儲存後等 1~2 分鐘生效）
+  - 功能與本機版相同，手機平板皆可用。
+  - 差異：筆記與考試紀錄存在「該裝置的該瀏覽器」（IndexedDB），
+    不會跨裝置同步；清除瀏覽資料會遺失，請用首頁的「匯出備份」
+    定期備份，可再用「匯入備份」還原。
+  - 題庫更新後執行 npm run build-static 重新產生 docs/ 再 push。
+
 ■ 題庫更新（進階）
   node scripts/harvest.js          重新採收
   npm run build-db -- --force      重建題庫（注意：會清除筆記與考試紀錄）

@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node --experimental-sqlite server.js",
     "build-db": "node --experimental-sqlite scripts/build-db.js",
-    "export-pdf": "node --experimental-sqlite scripts/export-pdf.js"
+    "export-pdf": "node --experimental-sqlite scripts/export-pdf.js",
+    "build-static": "node --experimental-sqlite scripts/build-static.js"
   },
   "dependencies": {
     "express": "^4.19.0"
