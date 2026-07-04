@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>閱讀題庫</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>閱讀題庫</h1>
+  <nav>
+    <a href="/">首頁</a>
+    <a href="/read.html" class="active">閱讀題庫</a>
+    <a href="/quiz.html">抽考</a>
+  </nav>
+</header>
+<div class="container">
+  <div class="read-layout">
+    <div class="card qlist-wrap">
+      <div style="display:flex; gap:6px; margin-bottom:8px">
+        <select id="filter" style="flex:1">
+          <option value="all">全部題目</option>
+          <option value="noted">有筆記</option>
+          <option value="wrong">答錯過</option>
+          <option value="review">答案待確認</option>
+        </select>
+      </div>
+      <input id="search" placeholder="搜尋題目關鍵字…" style="width:100%; margin-bottom:8px">
+      <div class="qlist" id="qlist"></div>
+    </div>
+    <div class="card" id="qview"><span class="muted">載入中…</span></div>
+    <div class="card" id="notepanel"><span class="muted">選擇題目後可做筆記</span></div>
+  </div>
+</div>
+<script src="notes.js"></script>
+<script>
+let all = [], view = [], curId = null; // 一律以題目id定位，不用陣列索引（索引會因排序/重載而飄移）
+
+function renderList() {
+  const f = document.getElementById('filter').value;
+  const kw = document.getElementById('search').value.trim();
+  view = all.filter(q =>
+    (f === 'all' || (f === 'noted' && q.noted) || (f === 'wrong' && q.wrong) || (f === 'review' && q.needs_review)) &&
+    (!kw || q.stem.includes(kw) || q.options.some(o => o.includes(kw))));
+  document.getElementById('qlist').innerHTML = view.map(q => `
+    <div class="qlist-item ${q.id === curId ? 'active' : ''}" onclick="show(${q.id})">
+      <span class="tag muted">${q.bank_years.split(',').pop()}年#${q.seq}</span>
+      <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${q.stem}</span>
+      ${q.noted ? '<span class="dot noted" title="有筆記"></span>' : ''}
+      ${q.wrong ? '<span class="dot wrong" title="答錯過"></span>' : ''}
+    </div>`).join('') || '<div class="muted">無符合題目</div>';
+}
+
+function show(id) {
+  const i = view.findIndex(q => q.id === id);
+  if (i < 0) return;
+  const q = view[i];
+  curId = q.id;
+  if (location.hash !== '#' + q.id) location.hash = q.id;
+  document.getElementById('qview').innerHTML = `
+    <div class="muted">出現年度：${q.bank_years.split(',').map(y => y + '年').join('、')}｜
+      來源：<a href="${q.source_url}" target="_blank">${q.source_name}</a></div>
+    ${q.needs_review ? '<div class="warn">⚠ 此題答案為程式自動判定且信心較低，建議自行查證</div>' : ''}
+    <h3 style="margin:10px 0">第 ${q.seq} 題</h3>
+    <div style="font-size:15.5px; line-height:1.7">${q.stem}</div>
+    ${q.options.map((o, j) => `<div class="option ${j === q.answer ? 'correct' : ''}">(${'ABCD'[j]}) ${o}</div>`).join('')}
+    ${q.answer === null ? '<div class="warn">此題無可靠答案來源，僅供閱讀</div>' : ''}
+    <div style="margin-top:12px; display:flex; gap:8px">
+      <button class="secondary" onclick="nav(-1)">← 上一題</button>
+      <button class="secondary" onclick="nav(1)">下一題 →</button>
+      <span class="muted" style="align-self:center">${i + 1} / ${view.length}</span>
+    </div>`;
+  createNotePanel(document.getElementById('notepanel'), q.id);
+  renderList();
+  const act = document.querySelector('.qlist-item.active');
+  if (act) act.scrollIntoView({ block: 'nearest' });
+}
+
+function nav(d) {
+  const i = view.findIndex(q => q.id === curId);
+  const n = i + d;
+  if (i >= 0 && n >= 0 && n < view.length) show(view[n].id);
+}
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+  if (e.key === 'ArrowLeft') nav(-1);
+  if (e.key === 'ArrowRight') nav(1);
+});
+
+document.getElementById('filter').onchange = () => { renderList(); if (view.length) show(view[0].id); };
+let searchTimer;
+document.getElementById('search').oninput = () => { clearTimeout(searchTimer); searchTimer = setTimeout(renderList, 250); };
+window.addEventListener('hashchange', () => {
+  const id = parseInt(location.hash.slice(1));
+  if (id && id !== curId) show(id);
+});
+
+// 筆記異動時更新列表綠點
+document.addEventListener('notes-changed', async e => {
+  const notes = await (await fetch('/api/notes/' + e.detail.qid)).json();
+  const q = all.find(x => x.id == e.detail.qid);
+  if (q) { q.noted = notes.length ? 1 : 0; renderList(); }
+});
+
+fetch('/api/questions').then(r => r.json()).then(qs => {
+  all = qs;
+  renderList();
+  const target = parseInt(location.hash.slice(1));
+  if (target && view.some(q => q.id === target)) show(target);
+  else if (view.length) show(view[0].id);
+});
+</script>
+</body>
+</html>

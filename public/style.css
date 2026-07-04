@@ -1,0 +1,55 @@
+* { box-sizing: border-box; }
+body { font-family: "Microsoft JhengHei", "Segoe UI", sans-serif; margin: 0; background: #f4f6f8; color: #223; }
+a { color: #1a6fb0; }
+header { background: #1f4e79; color: #fff; padding: 10px 20px; display: flex; align-items: center; gap: 18px; }
+header h1 { font-size: 18px; margin: 0; }
+header nav a { color: #cfe3f5; text-decoration: none; margin-right: 12px; }
+header nav a.active, header nav a:hover { color: #fff; text-decoration: underline; }
+.container { max-width: 1500px; margin: 0 auto; padding: 16px; }
+.card { background: #fff; border: 1px solid #dde3ea; border-radius: 8px; padding: 16px; margin-bottom: 14px; }
+button { background: #1f4e79; color: #fff; border: 0; border-radius: 6px; padding: 8px 16px; cursor: pointer; font-size: 14px; font-family: inherit; }
+button:hover { background: #2a6399; }
+button.secondary { background: #eef2f6; color: #223; border: 1px solid #c9d2dc; }
+button:disabled { opacity: .5; cursor: default; }
+input, select, textarea { font-family: inherit; font-size: 14px; padding: 7px 9px; border: 1px solid #c9d2dc; border-radius: 6px; }
+.muted { color: #778; font-size: 12.5px; }
+.warn { color: #b0621a; font-size: 12.5px; }
+
+/* 閱讀頁三欄 */
+.read-layout { display: grid; grid-template-columns: 290px 1fr 400px; gap: 14px; align-items: start; }
+.qlist { max-height: calc(100vh - 150px); overflow-y: auto; padding: 8px; }
+.qlist-item { padding: 6px 8px; border-radius: 5px; cursor: pointer; font-size: 13px; display: flex; gap: 6px; align-items: baseline; }
+.qlist-item:hover { background: #eef4fa; }
+.qlist-item.active { background: #d8e8f7; font-weight: bold; }
+.qlist-item .tag { flex-shrink: 0; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 3px; flex-shrink: 0; }
+.dot.noted { background: #2e9e44; }
+.dot.wrong { background: #d23f31; }
+
+.option { padding: 8px 12px; border: 1px solid #dde3ea; border-radius: 6px; margin: 6px 0; }
+.option.correct { background: #e4f5e8; border-color: #2e9e44; }
+.option.chosen-wrong { background: #fbe7e4; border-color: #d23f31; }
+label.option { display: block; cursor: pointer; }
+label.option:hover { background: #eef4fa; }
+
+/* 筆記面板 */
+.note-canvas { border: 1px dashed #b8c2cd; border-radius: 6px; background: #fff; touch-action: none; display: block; width: 100%; }
+.note-tools { display: flex; gap: 6px; margin: 6px 0; align-items: center; }
+.note-tools button { padding: 4px 10px; font-size: 13px; }
+.note-tools button.on { background: #e8842c; }
+.note-history-item { border-top: 1px solid #e4e9ef; padding: 10px 0; }
+.note-history-item img { max-width: 100%; border: 1px solid #e4e9ef; border-radius: 4px; }
+.note-history-item .when { color: #889; font-size: 12px; display: flex; justify-content: space-between; }
+.note-history-item .del { color: #b55; cursor: pointer; font-size: 12px; }
+.note-text { white-space: pre-wrap; margin: 6px 0; font-size: 14px; }
+
+/* 抽考 */
+.quiz-q { margin-bottom: 14px; }
+.quiz-q.res-correct { border-left: 5px solid #2e9e44; }
+.quiz-q.res-wrong { border-left: 5px solid #d23f31; }
+.score { font-size: 34px; font-weight: bold; }
+table.sess { border-collapse: collapse; width: 100%; }
+table.sess td, table.sess th { border-bottom: 1px solid #e4e9ef; padding: 7px 10px; text-align: left; font-size: 14px; }
+.stat-grid { display: flex; gap: 14px; flex-wrap: wrap; }
+.stat-box { flex: 1; min-width: 150px; text-align: center; padding: 18px 10px; }
+.stat-box .num { font-size: 32px; font-weight: bold; color: #1f4e79; }

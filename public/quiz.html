@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>抽考</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>抽考</h1>
+  <nav>
+    <a href="/">首頁</a>
+    <a href="/read.html">閱讀題庫</a>
+    <a href="/quiz.html" class="active">抽考</a>
+  </nav>
+</header>
+<div class="container" id="main">
+  <div class="card" id="setup">
+    <h3 style="margin-top:0">開始抽考</h3>
+    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+      <label>抽考題數 <input type="number" id="count" value="20" min="1" max="500" style="width:80px"></label>
+      <label>範圍
+        <select id="scope">
+          <option value="all">全部題庫</option>
+          <option value="wrong">只抽答錯過的題目</option>
+        </select>
+      </label>
+      <button id="start">開始</button>
+    </div>
+    <div class="muted" style="margin-top:8px">正式測驗為 100 題選擇題、80 分及格；答案未確認的題目不列入抽考。</div>
+  </div>
+</div>
+<script src="notes.js"></script>
+<script>
+let quiz = [];
+const main = document.getElementById('main');
+
+document.getElementById('start').onclick = async () => {
+  const count = document.getElementById('count').value;
+  const scope = document.getElementById('scope').value;
+  const res = await fetch('/api/quiz/start', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ count: +count, scope }),
+  });
+  quiz = await res.json();
+  if (!quiz.length) { alert(scope === 'wrong' ? '目前沒有答錯過的題目' : '題庫是空的'); return; }
+  renderQuiz();
+};
+
+function renderQuiz() {
+  main.innerHTML = `
+    <div class="card" style="position:sticky; top:0; z-index:5; display:flex; justify-content:space-between; align-items:center">
+      <span>共 ${quiz.length} 題｜已作答 <b id="done">0</b> 題</span>
+      <button id="submit">交卷</button>
+    </div>
+    ${quiz.map((q, i) => `
+    <div class="card quiz-q" id="q${i}">
+      <div class="muted">第 ${i + 1} 題（題庫 #${q.seq}）</div>
+      <div style="font-size:15.5px; line-height:1.7; margin:8px 0">${q.stem}</div>
+      ${q.options.map((o, j) => `
+        <label class="option"><input type="radio" name="q${i}" value="${j}"> (${'ABCD'[j]}) ${o}</label>`).join('')}
+    </div>`).join('')}
+    <div class="card"><button id="submit2">交卷</button></div>`;
+  main.addEventListener('change', () => {
+    document.getElementById('done').textContent = quiz.filter((_, i) => picked(i) !== null).length;
+  });
+  document.getElementById('submit').onclick = submit;
+  document.getElementById('submit2').onclick = submit;
+  window.scrollTo(0, 0);
+}
+
+function picked(i) {
+  const el = document.querySelector(`input[name="q${i}"]:checked`);
+  return el ? +el.value : null;
+}
+
+async function submit() {
+  const unanswered = quiz.filter((_, i) => picked(i) === null).length;
+  if (unanswered && !confirm(`還有 ${unanswered} 題未作答，未作答視為錯誤。確定交卷？`)) return;
+  const res = await fetch('/api/quiz/submit', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ answers: quiz.map((q, i) => ({ id: q.id, chosen: picked(i) })) }),
+  });
+  renderResult(await res.json());
+}
+
+function renderResult(r) {
+  const pct = Math.round(r.correct / r.total * 100);
+  main.innerHTML = `
+    <div class="card" style="text-align:center">
+      <div class="score" style="color:${pct >= 80 ? '#2e9e44' : '#d23f31'}">${pct} 分</div>
+      <div>${r.total} 題答對 ${r.correct} 題${pct >= 80 ? '，及格 🎉' : '（及格標準 80 分）'}</div>
+      <div style="margin-top:10px"><button onclick="location.reload()">再考一次</button>
+      <button class="secondary" onclick="location.href='/read.html'">回閱讀題庫</button></div>
+    </div>
+    ${r.results.map((q, i) => `
+    <div class="card quiz-q ${q.correct ? 'res-correct' : 'res-wrong'}">
+      <div class="muted">第 ${i + 1} 題（題庫 #${q.seq}）${q.correct ? '✓ 答對' : '✗ 答錯'}｜
+        出現年度：${q.bank_years.split(',').map(y => y + '年').join('、')}｜
+        <a href="${q.source_url}" target="_blank">來源</a></div>
+      <div style="font-size:15.5px; line-height:1.7; margin:8px 0">${q.stem}</div>
+      ${q.options.map((o, j) => `
+        <div class="option ${j === q.answer ? 'correct' : (j === q.chosen ? 'chosen-wrong' : '')}">
+          (${'ABCD'[j]}) ${o} ${j === q.answer ? '✓ 正解' : ''}${j === q.chosen && j !== q.answer ? '← 你的答案' : ''}
+        </div>`).join('')}
+      ${q.chosen === null ? '<div class="warn">此題未作答</div>' : ''}
+      ${!q.correct ? `
+        <div style="margin-top:8px">
+          <button class="secondary" onclick="toggleNote(this, ${q.id})">📝 為這題做筆記</button>
+          <a style="margin-left:8px" href="/read.html#${q.id}">在閱讀模式開啟</a>
+        </div>
+        <div class="notewrap" style="display:none; margin-top:10px; border-top:1px solid #e4e9ef; padding-top:10px"></div>` : ''}
+    </div>`).join('')}`;
+  window.scrollTo(0, 0);
+}
+
+function toggleNote(btn, qid) {
+  const wrap = btn.closest('.card').querySelector('.notewrap');
+  if (wrap.style.display === 'none') {
+    wrap.style.display = '';
+    if (!wrap.dataset.init) { createNotePanel(wrap, qid); wrap.dataset.init = 1; }
+    btn.textContent = '收合筆記';
+  } else { wrap.style.display = 'none'; btn.textContent = '📝 為這題做筆記'; }
+}
+</script>
+</body>
+</html>

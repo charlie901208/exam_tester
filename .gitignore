@@ -1,0 +1,4 @@
+node_modules/
+*.db-wal
+*.db-shm
+data/harvest_stdout.log

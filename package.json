@@ -1,0 +1,17 @@
+{
+  "name": "osh-exam-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "營造業甲種職業安全衛生業務主管 題庫閱讀與抽考系統",
+  "scripts": {
+    "start": "node --experimental-sqlite server.js",
+    "build-db": "node --experimental-sqlite scripts/build-db.js",
+    "export-pdf": "node --experimental-sqlite scripts/export-pdf.js"
+  },
+  "dependencies": {
+    "express": "^4.19.0"
+  },
+  "devDependencies": {
+    "pdf-parse": "^2.4.5"
+  }
+}

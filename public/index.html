@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>營造業甲種職安業務主管 題庫系統</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>營造業甲種職業安全衛生業務主管 題庫系統</h1>
+  <nav>
+    <a href="/" class="active">首頁</a>
+    <a href="/read.html">閱讀題庫</a>
+    <a href="/quiz.html">抽考</a>
+  </nav>
+</header>
+<div class="container">
+  <div class="card">
+    <div class="stat-grid">
+      <div class="stat-box"><div class="num" id="s-q">–</div>題庫總題數</div>
+      <div class="stat-box"><div class="num" id="s-n">–</div>累計筆記數</div>
+      <div class="stat-box"><div class="num" id="s-w">–</div>曾答錯題數</div>
+    </div>
+  </div>
+  <div class="card">
+    <div style="display:flex; gap:12px">
+      <button onclick="location.href='/read.html'">📖 閱讀題庫</button>
+      <button onclick="location.href='/quiz.html'">✏️ 開始抽考</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">歷次抽考成績</h3>
+    <table class="sess"><thead><tr><th>時間</th><th>題數</th><th>答對</th><th>得分</th></tr></thead>
+    <tbody id="sess-body"><tr><td colspan="4" class="muted">尚無紀錄</td></tr></tbody></table>
+  </div>
+  <div class="card muted">
+    題庫來源：阿摩線上測驗公開彙編之「營造業甲種職業安全衛生業務主管」110年參考題型、112年題庫彙編、113年題庫電子檔113年版。
+    正式結訓電腦測驗題目依法保密不公開，本題庫為公開流通之參考題庫，每題均記錄來源與出現年度。
+  </div>
+</div>
+<script>
+fetch('/api/stats').then(r => r.json()).then(s => {
+  document.getElementById('s-q').textContent = s.questions;
+  document.getElementById('s-n').textContent = s.notes;
+  document.getElementById('s-w').textContent = s.wrong;
+  if (s.sessions.length) {
+    document.getElementById('sess-body').innerHTML = s.sessions.map(x =>
+      `<tr><td>${x.taken_at}</td><td>${x.total}</td><td>${x.correct}</td><td>${Math.round(x.correct / x.total * 100)} 分</td></tr>`).join('');
+  }
+});
+</script>
+</body>
+</html>
