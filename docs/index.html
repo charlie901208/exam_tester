@@ -32,8 +32,9 @@
   </div>
   <div class="card">
     <h3 style="margin-top:0">歷次抽考成績</h3>
-    <table class="sess"><thead><tr><th>時間</th><th>題數</th><th>答對</th><th>得分</th></tr></thead>
-    <tbody id="sess-body"><tr><td colspan="4" class="muted">尚無紀錄</td></tr></tbody></table>
+    <div class="muted" style="margin-bottom:6px">點任一列可回看當次的完整作答內容</div>
+    <table class="sess"><thead><tr><th>時間</th><th>題數</th><th>答對</th><th>得分</th><th></th></tr></thead>
+    <tbody id="sess-body"><tr><td colspan="5" class="muted">尚無紀錄</td></tr></tbody></table>
   </div>
   <div class="card muted">
     題庫來源：阿摩線上測驗公開彙編之「營造業甲種職業安全衛生業務主管」110年參考題型、112年題庫彙編、113年題庫電子檔113年版。
@@ -47,7 +48,9 @@ fetch('/api/stats').then(r => r.json()).then(s => {
   document.getElementById('s-w').textContent = s.wrong;
   if (s.sessions.length) {
     document.getElementById('sess-body').innerHTML = s.sessions.map(x =>
-      `<tr><td>${x.taken_at}</td><td>${x.total}</td><td>${x.correct}</td><td>${Math.round(x.correct / x.total * 100)} 分</td></tr>`).join('');
+      `<tr style="cursor:pointer" onclick="location.href='quiz.html?session=${x.id}'">
+        <td>${x.taken_at}</td><td>${x.total}</td><td>${x.correct}</td><td>${Math.round(x.correct / x.total * 100)} 分</td>
+        <td><a href="quiz.html?session=${x.id}">檢視作答</a></td></tr>`).join('');
   }
 });
 </script>

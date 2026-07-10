@@ -50,6 +50,16 @@ app.post('/api/quiz/start', (req, res) => {
   res.json(rows.map(r => ({ ...r, options: JSON.parse(r.options) })));
 });
 
+// 歷次抽考回放：還原某次考試的完整結果畫面
+app.get('/api/quiz/session/:id', (req, res) => {
+  const s = db.prepare('SELECT id, taken_at, total, correct FROM quiz_sessions WHERE id=?').get(req.params.id);
+  if (!s) return res.status(404).json({ error: '無此紀錄' });
+  const rows = db.prepare(`SELECT a.chosen, a.is_correct correct, q.id, q.seq, q.stem, q.options, q.answer, q.source_name, q.source_url, q.bank_years
+    FROM quiz_answers a JOIN questions q ON q.id=a.question_id WHERE a.session_id=? ORDER BY a.id`).all(req.params.id);
+  res.json({ sessionId: s.id, takenAt: s.taken_at, total: s.total, correct: s.correct,
+    results: rows.map(r => ({ ...r, options: JSON.parse(r.options) })) });
+});
+
 app.post('/api/quiz/submit', (req, res) => {
   const answers = req.body.answers || []; // [{id, chosen}] chosen 可為 null(未作答)
   if (!answers.length) return res.status(400).json({ error: '無作答資料' });

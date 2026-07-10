@@ -89,10 +89,12 @@ function renderResult(r) {
   const pct = Math.round(r.correct / r.total * 100);
   main.innerHTML = `
     <div class="card" style="text-align:center">
+      ${r.takenAt ? `<div class="muted">歷史紀錄回放｜考試時間：${r.takenAt}</div>` : ''}
       <div class="score" style="color:${pct >= 80 ? '#2e9e44' : '#d23f31'}">${pct} 分</div>
       <div>${r.total} 題答對 ${r.correct} 題${pct >= 80 ? '，及格 🎉' : '（及格標準 80 分）'}</div>
-      <div style="margin-top:10px"><button onclick="location.reload()">再考一次</button>
-      <button class="secondary" onclick="location.href='read.html'">回閱讀題庫</button></div>
+      <div style="margin-top:10px"><button onclick="location.href='quiz.html'">再考一次</button>
+      <button class="secondary" onclick="location.href='read.html'">回閱讀題庫</button>
+      <button class="secondary" onclick="location.href='index.html'">回首頁</button></div>
     </div>
     ${r.results.map((q, i) => `
     <div class="card quiz-q ${q.correct ? 'res-correct' : 'res-wrong'}">
@@ -113,6 +115,15 @@ function renderResult(r) {
         <div class="notewrap" style="display:none; margin-top:10px; border-top:1px solid #e4e9ef; padding-top:10px"></div>` : ''}
     </div>`).join('')}`;
   window.scrollTo(0, 0);
+}
+
+// ?session=ID → 回放該次考試結果
+const sessionId = new URLSearchParams(location.search).get('session');
+if (sessionId) {
+  fetch('/api/quiz/session/' + sessionId).then(r => r.json()).then(r => {
+    if (r.error) { alert(r.error); location.href = 'index.html'; return; }
+    renderResult(r);
+  });
 }
 
 function toggleNote(btn, qid) {

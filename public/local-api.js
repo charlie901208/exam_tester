@@ -66,6 +66,15 @@
       for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
       return pool.slice(0, count).map(q => ({ id: q.id, seq: q.seq, stem: q.stem, options: q.options, bank_years: q.bank_years }));
     }
+    if ((m = path.match(/^quiz\/session\/(\d+)$/))) {
+      const sid = +m[1];
+      const s = (await getAll('sessions')).find(x => x.id === sid);
+      if (!s) return { error: '無此紀錄' };
+      const answers = (await getAll('answers')).filter(a => a.session_id === sid);
+      const byId = new Map((await loadQuestions()).map(q => [q.id, q]));
+      return { sessionId: s.id, takenAt: s.taken_at, total: s.total, correct: s.correct,
+               results: answers.map(a => ({ ...byId.get(a.qid), chosen: a.chosen, correct: a.correct })) };
+    }
     if (path === 'quiz/submit') {
       const byId = new Map((await loadQuestions()).map(q => [q.id, q]));
       const results = (body.answers || []).map(a => {
