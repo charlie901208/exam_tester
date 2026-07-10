@@ -100,7 +100,7 @@ function renderResult(r) {
     <div class="card quiz-q ${q.correct ? 'res-correct' : 'res-wrong'}">
       <div class="muted">第 ${i + 1} 題（題庫 #${q.seq}）${q.correct ? '✓ 答對' : '✗ 答錯'}｜
         出現年度：${q.bank_years.split(',').map(y => y + '年').join('、')}｜
-        <a href="${q.source_url}" target="_blank">來源</a></div>
+        ${q.source_url ? `<a href="${q.source_url}" target="_blank">來源</a>` : '刊誤補充'}</div>
       <div style="font-size:15.5px; line-height:1.7; margin:8px 0">${q.stem}</div>
       ${q.options.map((o, j) => `
         <div class="option ${j === q.answer ? 'correct' : (j === q.chosen ? 'chosen-wrong' : '')}">

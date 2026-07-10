@@ -60,7 +60,7 @@ function show(id) {
   if (location.hash !== '#' + q.id) location.hash = q.id;
   document.getElementById('qview').innerHTML = `
     <div class="muted">出現年度：${q.bank_years.split(',').map(y => y + '年').join('、')}｜
-      來源：<a href="${q.source_url}" target="_blank">${q.source_name}</a></div>
+      來源：${q.source_url ? `<a href="${q.source_url}" target="_blank">${q.source_name}</a>` : q.source_name}</div>
     ${q.needs_review ? '<div class="warn">⚠ 此題答案為程式自動判定且信心較低，建議自行查證</div>' : ''}
     <h3 style="margin:10px 0">第 ${q.seq} 題</h3>
     <div style="font-size:15.5px; line-height:1.7">${q.stem}</div>

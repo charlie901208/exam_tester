@@ -38,5 +38,11 @@ const pdfPath = path.join(outDir, '題庫檢查版.pdf');
 fs.writeFileSync(htmlPath, html);
 
 const edge = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
-execFileSync(edge, ['--headless', '--disable-gpu', `--print-to-pdf=${pdfPath}`, '--no-pdf-header-footer', htmlPath], { timeout: 120000 });
+try {
+  execFileSync(edge, ['--headless', '--disable-gpu', `--print-to-pdf=${pdfPath}`, '--no-pdf-header-footer', htmlPath], { timeout: 120000 });
+} catch (e) {
+  // Edge 偶爾寫完 PDF 後不退出而逾時；只要檔案是剛寫出的就視為成功
+  const st = fs.existsSync(pdfPath) && fs.statSync(pdfPath);
+  if (!st || Date.now() - st.mtimeMs > 120000) throw e;
+}
 console.log(`PDF 匯出完成: ${pdfPath} (${rows.length} 題)`);
