@@ -12,9 +12,13 @@ const rows = db.prepare(`SELECT id, seq, stem, options, answer, needs_review, so
   .map(r => ({ ...r, options: JSON.parse(r.options) }));
 fs.writeFileSync(path.join(docs, 'questions.json'), JSON.stringify(rows));
 
-// 使用者筆記一併輸出，靜態版第一次開啟時自動載入為預設筆記
-const notes = db.prepare(`SELECT id, question_id AS qid, created_at, text FROM notes WHERE text IS NOT NULL ORDER BY id`).all();
-fs.writeFileSync(path.join(docs, 'notes.json'), JSON.stringify(notes));
+// 使用者筆記與考試紀錄一併輸出，靜態版第一次開啟時自動載入為預設資料
+const seed = {
+  notes: db.prepare(`SELECT id, question_id AS qid, created_at, text FROM notes WHERE text IS NOT NULL ORDER BY id`).all(),
+  sessions: db.prepare(`SELECT id, taken_at, total, correct FROM quiz_sessions ORDER BY id`).all(),
+  answers: db.prepare(`SELECT id, session_id, question_id AS qid, chosen, is_correct AS correct FROM quiz_answers ORDER BY id`).all(),
+};
+fs.writeFileSync(path.join(docs, 'seed.json'), JSON.stringify(seed));
 
 for (const f of fs.readdirSync(path.join(root, 'public'))) {
   let content = fs.readFileSync(path.join(root, 'public', f), 'utf8');

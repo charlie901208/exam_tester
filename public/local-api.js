@@ -16,20 +16,27 @@
       };
       r.onsuccess = () => res(r.result);
       r.onerror = () => rej(r.error);
-    }).then(seedNotes);
+    }).then(seedDefaults);
     return dbP;
   }
-  // 第一次使用（notes 是空的）時，把 notes.json 的預設筆記灌進 IndexedDB；已有筆記則不動
-  async function seedNotes(d) {
-    const count = await reqP(d.transaction('notes').objectStore('notes').count());
-    if (count) return d;
-    const defaults = await realFetch('notes.json').then(r => r.ok ? r.json() : []).catch(() => []);
-    if (defaults.length) await new Promise((res, rej) => {
-      const tx = d.transaction('notes', 'readwrite');
-      defaults.forEach(n => tx.objectStore('notes').add(n));
-      tx.oncomplete = res;
-      tx.onerror = () => rej(tx.error);
-    });
+  // 第一次使用時，把 seed.json 的預設筆記與考試紀錄灌進 IndexedDB；已有資料的 store 不動
+  async function seedDefaults(d) {
+    const stores = ['notes', 'sessions', 'answers'];
+    const empty = [];
+    for (const s of stores)
+      if (!await reqP(d.transaction(s).objectStore(s).count())) empty.push(s);
+    if (!empty.length) return d;
+    const seed = await realFetch('seed.json').then(r => r.ok ? r.json() : {}).catch(() => ({}));
+    for (const s of empty) {
+      const rows = seed[s] || [];
+      if (!rows.length) continue;
+      await new Promise((res, rej) => {
+        const tx = d.transaction(s, 'readwrite');
+        rows.forEach(n => tx.objectStore(s).add(n));
+        tx.oncomplete = res;
+        tx.onerror = () => rej(tx.error);
+      });
+    }
     return d;
   }
   const reqP = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
