@@ -6,6 +6,12 @@
       "runtimeExecutable": "node",
       "runtimeArgs": ["--experimental-sqlite", "server.js"],
       "port": 3456
+    },
+    {
+      "name": "docs-static",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "const e=require('express');e().use(e.static('docs')).listen(3457)"],
+      "port": 3457
     }
   ]
 }

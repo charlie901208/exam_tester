@@ -16,8 +16,21 @@
       };
       r.onsuccess = () => res(r.result);
       r.onerror = () => rej(r.error);
-    });
+    }).then(seedNotes);
     return dbP;
+  }
+  // 第一次使用（notes 是空的）時，把 notes.json 的預設筆記灌進 IndexedDB；已有筆記則不動
+  async function seedNotes(d) {
+    const count = await reqP(d.transaction('notes').objectStore('notes').count());
+    if (count) return d;
+    const defaults = await realFetch('notes.json').then(r => r.ok ? r.json() : []).catch(() => []);
+    if (defaults.length) await new Promise((res, rej) => {
+      const tx = d.transaction('notes', 'readwrite');
+      defaults.forEach(n => tx.objectStore('notes').add(n));
+      tx.oncomplete = res;
+      tx.onerror = () => rej(tx.error);
+    });
+    return d;
   }
   const reqP = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
   const getAll = async s => reqP((await openDB()).transaction(s).objectStore(s).getAll());

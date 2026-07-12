@@ -12,6 +12,10 @@ const rows = db.prepare(`SELECT id, seq, stem, options, answer, needs_review, so
   .map(r => ({ ...r, options: JSON.parse(r.options) }));
 fs.writeFileSync(path.join(docs, 'questions.json'), JSON.stringify(rows));
 
+// 使用者筆記一併輸出，靜態版第一次開啟時自動載入為預設筆記
+const notes = db.prepare(`SELECT id, question_id AS qid, created_at, text FROM notes WHERE text IS NOT NULL ORDER BY id`).all();
+fs.writeFileSync(path.join(docs, 'notes.json'), JSON.stringify(notes));
+
 for (const f of fs.readdirSync(path.join(root, 'public'))) {
   let content = fs.readFileSync(path.join(root, 'public', f), 'utf8');
   if (f.endsWith('.html')) content = content.replace('</title>', '</title>\n<script src="local-api.js"></script>');
