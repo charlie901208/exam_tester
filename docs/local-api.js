@@ -19,15 +19,26 @@
     }).then(seedDefaults);
     return dbP;
   }
-  // 第一次使用時，把 seed.json 的預設筆記與考試紀錄灌進 IndexedDB；已有資料的 store 不動
+  // 第一次使用時，把 seed.json 的預設筆記與考試紀錄灌進 IndexedDB；
+  // 之後偵測到網站預設資料更新（version 變了）時，詢問是否覆蓋成最新版
   async function seedDefaults(d) {
     const stores = ['notes', 'sessions', 'answers'];
+    const store = (s, mode) => d.transaction(s, mode).objectStore(s);
     const empty = [];
     for (const s of stores)
-      if (!await reqP(d.transaction(s).objectStore(s).count())) empty.push(s);
-    if (!empty.length) return d;
-    const seed = await realFetch('seed.json').then(r => r.ok ? r.json() : {}).catch(() => ({}));
-    for (const s of empty) {
+      if (!await reqP(store(s).count())) empty.push(s);
+    // no-cache：每次都跟伺服器確認版本（沒更新時是便宜的 304，不會重下載）
+    const seed = await realFetch('seed.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).catch(() => null);
+    if (!seed) return d;
+    const ver = String(seed.version || '');
+    let fill = empty;
+    if (empty.length < stores.length && ver && localStorage.getItem('seedVersion') !== ver) {
+      if (confirm('網站的預設筆記/考試紀錄有更新，要載入到此瀏覽器嗎？\n\n（會覆蓋這台裝置現有的筆記與考試紀錄；想保留請按「取消」，先到首頁匯出備份，之後可用「載入最新預設資料」按鈕更新）')) {
+        for (const s of stores) await reqP(store(s, 'readwrite').clear());
+        fill = stores;
+      }
+    }
+    for (const s of fill) {
       const rows = seed[s] || [];
       if (!rows.length) continue;
       await new Promise((res, rej) => {
@@ -37,6 +48,7 @@
         tx.onerror = () => rej(tx.error);
       });
     }
+    if (ver) localStorage.setItem('seedVersion', ver);
     return d;
   }
   const reqP = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
@@ -126,6 +138,7 @@
       <div class="warn" style="margin-bottom:8px">網頁版的筆記與考試紀錄存在「這台裝置的這個瀏覽器」，清除瀏覽資料會遺失，請定期匯出備份。</div>
       <button id="bk-out">匯出備份</button>
       <button class="secondary" id="bk-in-btn">匯入備份</button>
+      <button class="secondary" id="bk-reset">載入最新預設資料</button>
       <input type="file" id="bk-in" accept=".json" style="display:none">
       <span class="muted" id="bk-msg"></span>`;
     document.querySelector('.container').appendChild(card);
@@ -136,6 +149,12 @@
       a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: 'application/json' }));
       a.download = `題庫筆記備份_${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
+    };
+    document.getElementById('bk-reset').onclick = async () => {
+      if (!confirm('會刪除此瀏覽器現有的筆記與考試紀錄，改為載入網站內建的最新預設資料，確定？')) return;
+      for (const s of ['notes', 'sessions', 'answers']) await clear(s);
+      localStorage.removeItem('seedVersion');
+      location.reload();
     };
     document.getElementById('bk-in-btn').onclick = () => document.getElementById('bk-in').click();
     document.getElementById('bk-in').onchange = async e => {
